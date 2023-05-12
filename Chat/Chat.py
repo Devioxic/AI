@@ -24,7 +24,7 @@ def chatbot(tokenizer, model, prompt):
 	inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
 	input_length = inputs.input_ids.shape[1]
 	outputs = model.generate(
-		**inputs, max_new_tokens=128, do_sample=True, temperature=0.3, top_p=0.7, top_k=50, return_dict_in_generate=True
+		**inputs, max_new_tokens=128, do_sample=False, temperature=0.2, top_p=0.8, top_k=50, return_dict_in_generate=True
 	)
 	token = outputs.sequences[0, input_length:]
 	output_str = tokenizer.decode(token)
@@ -41,6 +41,8 @@ def read_root():
 def chat(prompt: str):
 		prompt = f"<humnan>: {prompt}/n<bot>:"
 		output_str = chatbot(tokenizer, model, prompt)
+		if "<humnan>" in output_str:
+			output_str = output_str.split("<humnan>")[0]
 		return {"response": output_str}
 
 if __name__ == '__main__':
