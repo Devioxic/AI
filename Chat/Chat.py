@@ -41,8 +41,8 @@ def read_root():
 def chat(prompt: str):
 		prompt = f"<humnan>: {prompt}/n<bot>:"
 		output_str = chatbot(tokenizer, model, prompt)
-		if "<humnan>" in output_str:
-			output_str = output_str.split("<humnan>")[0]
+		if "<human>" in output_str:
+			output_str = output_str.split("<human>")[0]
 		return {"response": output_str}
 
 if __name__ == '__main__':
