@@ -3,4 +3,3 @@ transformers
 fastapi
 uvicorn
 google-cloud-aiplatform
-vertexai.preview.language_models
