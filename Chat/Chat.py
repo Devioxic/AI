@@ -1,37 +1,33 @@
-import torch
-import transformers
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from fastapi import FastAPI
 import uvicorn as uvi
-
-MIN_TRANSFORMERS_VERSION = '4.25.1'
-
-# check transformers version
-assert transformers.__version__ >= MIN_TRANSFORMERS_VERSION, f'Please upgrade transformers to version {MIN_TRANSFORMERS_VERSION} or higher.'
-
-tokenizer = None
-model = None
-
-def load_model():
-	global tokenizer
-	global model
-	tokenizer = AutoTokenizer.from_pretrained("togethercomputer/RedPajama-INCITE-Chat-3B-v1")
-	model = AutoModelForCausalLM.from_pretrained("togethercomputer/RedPajama-INCITE-Chat-3B-v1", torch_dtype=torch.bfloat16)
-
-	return tokenizer, model
-
-def chatbot(tokenizer, model, prompt):
-	inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
-	input_length = inputs.input_ids.shape[1]
-	outputs = model.generate(
-		**inputs, max_new_tokens=128, do_sample=False, temperature=0.2, top_p=0.8, top_k=50, return_dict_in_generate=True
-	)
-	token = outputs.sequences[0, input_length:]
-	output_str = tokenizer.decode(token)
-
-	return output_str
+from vertexai.preview.language_models import ChatModel
 
 app = FastAPI()
+
+def chatbot(prompt, temperature=0.2):
+
+    chat_model = ChatModel.from_pretrained("chat-bison@001")
+
+    # TODO developer - override these parameters as needed:
+    parameters = {
+        "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
+        "max_output_tokens": 512,    # Token limit determines the maximum amount of text output.
+        "top_p": 0.9,               # Tokens are selected from most probable to least until the sum of their probabilities equals the top_p value.
+        "top_k": 40,                 # A top_k of 1 means the selected token is the most probable among all tokens.
+    }
+
+    chat = chat_model.start_chat(
+        context="You are an assistant named Ruby",
+        examples=[
+        ]
+    )
+
+    response = chat.send_message(prompt, **parameters)
+    print(response.text)
+
+    return response
+
+
 
 @app.get("/")
 def read_root():
@@ -39,12 +35,8 @@ def read_root():
 
 @app.get("/chat/{prompt}")
 def chat(prompt: str):
-		prompt = f"<humnan>: {prompt}/n<bot>:"
-		output_str = chatbot(tokenizer, model, prompt)
-		if "<human>" in output_str:
-			output_str = output_str.split("<human>")[0]
+		output_str = chatbot(prompt)
 		return {"response": output_str}
 
 if __name__ == '__main__':
-	load_model()
 	uvi.run(app, host='0.0.0.0', port=8000)
